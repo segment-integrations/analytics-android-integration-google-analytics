@@ -36,10 +36,9 @@ checkstyle {
 dependencies {
   repositories {
     mavenCentral()
-    maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
   }
 
-  provided 'com.segment.analytics.android:analytics:4.0.0-SNAPSHOT'
+  provided 'com.segment.analytics.android:analytics:4.0.0'
 
   compile 'com.google.android.gms:play-services-analytics:8.3.0'
 
@@ -49,7 +48,7 @@ dependencies {
     exclude group: 'org.apache.httpcomponents', module: 'httpclient'
   }
 
-  testCompile 'com.segment.analytics.android:analytics-tests:4.0.0-SNAPSHOT'
+  testCompile 'com.segment.analytics.android:analytics-tests:4.0.0'
 
   testCompile 'org.assertj:assertj-core:1.7.1'
 
