@@ -1,3 +1,8 @@
+Version 1.1.1 (19th July, 2016)
+==============================
+*(Supports analytics-android 4.0+ and Google Analytics 9.2.0)* 
+
+  * Updating Google Analytics dependency to 9.2.
 
 Version 1.1.0 (5th April, 2016)
 ==============================
