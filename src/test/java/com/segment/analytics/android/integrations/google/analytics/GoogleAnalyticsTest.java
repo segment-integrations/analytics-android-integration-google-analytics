@@ -202,7 +202,7 @@ public class GoogleAnalyticsTest {
   }
 
   @Test public void sendProductEvent() {
-    Properties properties = new Properties().putProductId("foo")
+    Properties properties = new Properties().putOrderId("foo")
         .putCurrency("bar")
         .putName("baz")
         .putSku("qaz")
@@ -226,7 +226,7 @@ public class GoogleAnalyticsTest {
     integration.customDimensions = new ValueMap().putValue("customDimension", "dimension2");
     integration.customMetrics = new ValueMap().putValue("customMetric", "metric3");
 
-    Properties properties = new Properties().putProductId("foo")
+    Properties properties = new Properties().putOrderId("foo")
         .putCurrency("bar")
         .putName("baz")
         .putSku("qaz")

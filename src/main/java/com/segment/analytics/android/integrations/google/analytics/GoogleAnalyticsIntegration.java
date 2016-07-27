@@ -3,6 +3,7 @@ package com.segment.analytics.android.integrations.google.analytics;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.HitBuilders.TransactionBuilder;
 import com.segment.analytics.Analytics;
@@ -15,6 +16,7 @@ import com.segment.analytics.integrations.Logger;
 import com.segment.analytics.integrations.ScreenPayload;
 import com.segment.analytics.integrations.TrackPayload;
 import com.segment.analytics.internal.Utils;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -177,7 +179,7 @@ public class GoogleAnalyticsIntegration
         for (int i = 0; i < products.size(); i++) {
           Product product = products.get(i);
           ItemHitBuilder hitBuilder = new ItemHitBuilder();
-          hitBuilder.setTransactionId(product.id())
+          hitBuilder.setTransactionId(properties.orderId())
               .setName(product.name())
               .setSku(product.sku())
               .setPrice(product.price())
@@ -297,7 +299,7 @@ public class GoogleAnalyticsIntegration
     }
 
     ItemHitBuilder itemHitBuilder = new ItemHitBuilder();
-    itemHitBuilder.setTransactionId(properties.productId())
+    itemHitBuilder.setTransactionId(properties.orderId())
         .setCurrencyCode(properties.currency())
         .setName(properties.name())
         .setSku(properties.sku())
