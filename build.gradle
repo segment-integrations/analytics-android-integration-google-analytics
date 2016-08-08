@@ -40,7 +40,7 @@ dependencies {
 
   provided 'com.segment.analytics.android:analytics:4.0.0'
 
-  compile 'com.google.android.gms:play-services-analytics:9.2.0'
+  compile 'com.google.android.gms:play-services-analytics:9.4.0'
 
   testCompile 'junit:junit:4.12'
   testCompile('org.robolectric:robolectric:3.0') {
