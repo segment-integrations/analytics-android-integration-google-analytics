@@ -13,6 +13,7 @@ import com.segment.analytics.core.tests.BuildConfig;
 import com.segment.analytics.integrations.IdentifyPayload;
 import com.segment.analytics.integrations.Logger;
 import com.segment.analytics.integrations.ScreenPayload;
+import com.segment.analytics.integrations.TrackPayload;
 import com.segment.analytics.test.IdentifyPayloadBuilder;
 import com.segment.analytics.test.ScreenPayloadBuilder;
 import com.segment.analytics.test.TrackPayloadBuilder;
@@ -61,6 +62,16 @@ public class GoogleAnalyticsTest {
 
     integration = new GoogleAnalyticsIntegration(application, googleAnalytics,
         new ValueMap().putValue("mobileTrackingId", "foo"), Logger.with(VERBOSE));
+  }
+
+  static AnalyticsContext contextWithCampaign(Campaign campaign) throws Exception {
+    Map<String, Object> map = new LinkedHashMap<>();
+    map.put("traits", new Traits());
+    Constructor<AnalyticsContext> constructor =
+        AnalyticsContext.class.getDeclaredConstructor(Map.class);
+    constructor.setAccessible(true);
+    AnalyticsContext analyticsContext = constructor.newInstance(map);
+    return analyticsContext.putCampaign(campaign);
   }
 
   @Test public void initialize() throws IllegalStateException {
@@ -168,6 +179,64 @@ public class GoogleAnalyticsTest {
         .build());
   }
 
+  @Test public void trackWithAllCampaignData() throws Exception{
+
+    Campaign campaign = new Campaign() //
+        .putContent("newsletter") //
+        .putMedium("online")
+        .putName("coupons")
+        .putSource("email");
+
+    TrackPayload payload = new TrackPayloadBuilder()  //
+        .event("bar") //
+        .context(contextWithCampaign(campaign)) //
+        .build();
+
+    integration.track(payload);
+    verify(tracker).send(new HitBuilders.EventBuilder().setCategory("All")
+        .setAction("bar")
+        .setLabel(null)
+        .setValue(0)
+        .setCampaignParamsFromUrl(
+            "utm_content=newsletter&utm_source=email&utm_medium=online&utm_campaign=coupons")
+        .build());
+  }
+
+  @Test public void trackWithNullCampaignData() throws Exception{
+
+    TrackPayload payload = new TrackPayloadBuilder()  //
+        .event("bar") //
+        .build();
+
+    integration.track(payload);
+    verify(tracker).send(new HitBuilders.EventBuilder().setCategory("All")
+        .setAction("bar")
+        .setLabel(null)
+        .setValue(0)
+        .build());
+  }
+
+  @Test public void trackWithSomeCampaignData() throws Exception{
+
+    Campaign campaign = new Campaign() //
+        .putContent("email") //
+        .putMedium("online");
+
+    TrackPayload payload = new TrackPayloadBuilder()  //
+        .event("bar") //
+        .context(contextWithCampaign(campaign)) //
+        .build();
+
+    integration.track(payload);
+    verify(tracker).send(new HitBuilders.EventBuilder().setCategory("All")
+        .setAction("bar")
+        .setLabel(null)
+        .setValue(0)
+        .setCampaignParamsFromUrl(
+            "utm_content=email&utm_source=null&utm_medium=online&utm_campaign=null")
+        .build());
+  }
+
   @Test public void screen() {
     integration.screen(new ScreenPayloadBuilder().name("foo").build());
 
@@ -201,16 +270,6 @@ public class GoogleAnalyticsTest {
     inOrder.verify(tracker).send(new HitBuilders.AppViewBuilder().setCustomMetric(14, 100).build());
   }
 
-  static AnalyticsContext contextWithCampaign(Campaign campaign) throws Exception {
-    Map<String, Object> map = new LinkedHashMap<>();
-    map.put("traits", new Traits());
-    Constructor<AnalyticsContext> constructor =
-        AnalyticsContext.class.getDeclaredConstructor(Map.class);
-    constructor.setAccessible(true);
-    AnalyticsContext analyticsContext = constructor.newInstance(map);
-    return analyticsContext.putCampaign(campaign);
-  }
-
   @Test public void screenWithAllCampaignData() throws Exception {
     Campaign campaign = new Campaign() //
         .putContent("textlink") //
@@ -218,13 +277,13 @@ public class GoogleAnalyticsTest {
         .putMedium("cpc")
         .putName("spring_sale");
     ScreenPayload payload = new ScreenPayloadBuilder()  //
-        .name("hey") //
+        .name("foo") //
         .context(contextWithCampaign(campaign)) //
         .build();
 
     integration.screen(payload);
 
-    verify(tracker).setScreenName("hey");
+    verify(tracker).setScreenName("foo");
     verify(tracker).send(new HitBuilders.ScreenViewBuilder() //
         .setCampaignParamsFromUrl(
             "utm_content=textlink&utm_source=google&utm_medium=cpc&utm_campaign=spring_sale") //
