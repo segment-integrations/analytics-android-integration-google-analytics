@@ -4,12 +4,15 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 
+import android.net.Uri;
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.HitBuilders.TransactionBuilder;
 import com.segment.analytics.Analytics;
 import com.segment.analytics.Properties;
+import com.segment.analytics.AnalyticsContext;
 import com.segment.analytics.Properties.Product;
 import com.segment.analytics.ValueMap;
+import com.segment.analytics.integrations.BasePayload;
 import com.segment.analytics.integrations.IdentifyPayload;
 import com.segment.analytics.integrations.Integration;
 import com.segment.analytics.integrations.Logger;
@@ -52,6 +55,7 @@ public class GoogleAnalyticsIntegration
       }
 
       Context context = analytics.getApplication();
+      //noinspection MissingPermission
       com.google.android.gms.analytics.GoogleAnalytics ga =
           com.google.android.gms.analytics.GoogleAnalytics.getInstance(context);
 
@@ -135,6 +139,8 @@ public class GoogleAnalyticsIntegration
 
     ScreenViewHitBuilder hitBuilder = new ScreenViewHitBuilder();
     attachCustomDimensionsAndMetrics(hitBuilder, properties);
+    attachCampaignData(hitBuilder, screen);
+
     Map<String, String> hit = hitBuilder.build();
     tracker.send(hit);
     logger.verbose("tracker.send(%s);", hit);
@@ -197,6 +203,7 @@ public class GoogleAnalyticsIntegration
           .setRevenue(properties.total())
           .setTax(properties.tax())
           .setShipping(properties.shipping());
+
       Map<String, String> transaction = transactionBuilder.build();
       tracker.send(transaction);
       logger.verbose("tracker.send(%s);", transaction);
@@ -208,7 +215,10 @@ public class GoogleAnalyticsIntegration
         .setCategory(isNullOrEmpty(category) ? DEFAULT_CATEGORY : category)
         .setLabel(label)
         .setValue((int) properties.value());
+
     attachCustomDimensionsAndMetrics(eventHitBuilder, properties);
+    attachCampaignData(eventHitBuilder, track);
+
     Map<String, String> eventHit = eventHitBuilder.build();
     tracker.send(eventHit);
     logger.verbose("tracker.send(%s);", eventHit);
@@ -223,6 +233,8 @@ public class GoogleAnalyticsIntegration
     CustomHitBuilder setCustomDimension(int index, String dimension);
 
     CustomHitBuilder setCustomMetric(int index, float metric);
+
+    CustomHitBuilder setCampaignParamsFromUrl(String url);
   }
 
   static class EventHitBuilder extends HitBuilders.EventBuilder implements CustomHitBuilder {
@@ -233,6 +245,11 @@ public class GoogleAnalyticsIntegration
 
     @Override public EventHitBuilder setCustomMetric(int index, float metric) {
       super.setCustomMetric(index, metric);
+      return this;
+    }
+
+    @Override public EventHitBuilder setCampaignParamsFromUrl(String url) {
+      super.setCampaignParamsFromUrl(url);
       return this;
     }
   }
@@ -248,6 +265,11 @@ public class GoogleAnalyticsIntegration
       super.setCustomMetric(index, metric);
       return this;
     }
+
+    @Override public ScreenViewHitBuilder setCampaignParamsFromUrl(String url) {
+      super.setCampaignParamsFromUrl(url);
+      return this;
+    }
   }
 
   static class ItemHitBuilder extends HitBuilders.ItemBuilder implements CustomHitBuilder {
@@ -258,6 +280,11 @@ public class GoogleAnalyticsIntegration
 
     @Override public ItemHitBuilder setCustomMetric(int index, float metric) {
       super.setCustomMetric(index, metric);
+      return this;
+    }
+
+    @Override public ItemHitBuilder setCampaignParamsFromUrl(String url) {
+      super.setCampaignParamsFromUrl(url);
       return this;
     }
   }
@@ -276,6 +303,23 @@ public class GoogleAnalyticsIntegration
         hitBuilder.setCustomMetric(metric, Utils.coerceToFloat(entry.getValue(), 0));
       }
     }
+  }
+
+  /** Set campaign data when present. */
+  void attachCampaignData(CustomHitBuilder hitBuilder, BasePayload payload) {
+    AnalyticsContext.Campaign campaign = payload.context().campaign();
+    if (isNullOrEmpty(campaign)) {
+      return;
+    }
+
+    String url = new Uri.Builder().appendQueryParameter("utm_content", campaign.content())
+        .appendQueryParameter("utm_source", campaign.source())
+        .appendQueryParameter("utm_medium", campaign.medium())
+        .appendQueryParameter("utm_campaign", campaign.name())
+        .build()
+        .toString();
+
+    hitBuilder.setCampaignParamsFromUrl(url);
   }
 
   // e.g. extractNumber("dimension3", 8) returns 3
