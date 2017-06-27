@@ -4,10 +4,12 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 
+import android.net.Uri;
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.HitBuilders.TransactionBuilder;
 import com.segment.analytics.Analytics;
 import com.segment.analytics.Properties;
+import com.segment.analytics.AnalyticsContext;
 import com.segment.analytics.Properties.Product;
 import com.segment.analytics.ValueMap;
 import com.segment.analytics.integrations.IdentifyPayload;
@@ -52,6 +54,7 @@ public class GoogleAnalyticsIntegration
       }
 
       Context context = analytics.getApplication();
+      //noinspection MissingPermission
       com.google.android.gms.analytics.GoogleAnalytics ga =
           com.google.android.gms.analytics.GoogleAnalytics.getInstance(context);
 
@@ -135,6 +138,20 @@ public class GoogleAnalyticsIntegration
 
     ScreenViewHitBuilder hitBuilder = new ScreenViewHitBuilder();
     attachCustomDimensionsAndMetrics(hitBuilder, properties);
+
+    AnalyticsContext context = screen.context();
+    AnalyticsContext.Campaign campaign = context.campaign();
+    if (!isNullOrEmpty(campaign)) {
+      String url = new Uri.Builder().appendQueryParameter("utm_content", campaign.content())
+          .appendQueryParameter("utm_source", campaign.source())
+          .appendQueryParameter("utm_medium", campaign.medium())
+          .appendQueryParameter("utm_campaign", campaign.name())
+          .build()
+          .toString();
+
+      hitBuilder.setCampaignParamsFromUrl(url);
+    }
+
     Map<String, String> hit = hitBuilder.build();
     tracker.send(hit);
     logger.verbose("tracker.send(%s);", hit);
