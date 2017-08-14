@@ -3,6 +3,7 @@ package com.segment.analytics.android.integrations.google.analytics;
 import android.app.Activity;
 import android.app.Application;
 import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.ecommerce.ProductAction;
 import com.segment.analytics.Analytics;
 import com.segment.analytics.AnalyticsContext;
 import com.segment.analytics.AnalyticsContext.Campaign;
@@ -31,6 +32,7 @@ import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import static android.R.attr.category;
 import static com.segment.analytics.Analytics.LogLevel.VERBOSE;
 import static com.segment.analytics.Utils.createTraits;
 import static org.mockito.Matchers.anyMapOf;
@@ -327,6 +329,7 @@ public class GoogleAnalyticsTest {
 
   @Test public void sendProductEvent() {
     Properties properties = new Properties().putOrderId("foo")
+        .putProductId("foo")
         .putCurrency("bar")
         .putName("baz")
         .putSku("qaz")
@@ -335,15 +338,20 @@ public class GoogleAnalyticsTest {
 
     integration.sendProductEvent("Viewed Product", "sports", properties);
 
-    verify(tracker).send(new HitBuilders.ItemBuilder() //
-        .setTransactionId("foo")
-        .setCurrencyCode("bar")
-        .setName("baz")
-        .setSku("qaz")
-        .setCategory("sports")
-        .setPrice(20)
-        .setQuantity(10)
-        .build());
+    com.google.android.gms.analytics.ecommerce.Product product =
+            new com.google.android.gms.analytics.ecommerce.Product()
+                .setId("foo")
+                .setName("baz")
+                .setCategory("sports")
+                .setPrice(20)
+                .setQuantity(10);
+
+    ProductAction productAction = new ProductAction(ProductAction.ACTION_DETAIL);
+
+    verify(tracker).send(new HitBuilders.ScreenViewBuilder()
+                .addProduct(product)
+                .setProductAction(productAction)
+                .build());
   }
 
   @Test public void sendProductEventWithCustomDimensionsAndMetrics() {
@@ -351,26 +359,32 @@ public class GoogleAnalyticsTest {
     integration.customMetrics = new ValueMap().putValue("customMetric", "metric3");
 
     Properties properties = new Properties().putOrderId("foo")
+        .putProductId("foo")
         .putCurrency("bar")
         .putName("baz")
         .putSku("qaz")
         .putPrice(20)
         .putValue("quantity", 10)
-        .putValue("customMetric", "32.22")
+        .putValue("customMetric", 32)
         .putValue("customDimension", "barbaz");
     integration.sendProductEvent("Removed Product", "sports", properties);
 
-    verify(tracker).send(new HitBuilders.ItemBuilder() //
-        .setTransactionId("foo")
-        .setCurrencyCode("bar")
-        .setName("baz")
-        .setSku("qaz")
-        .setCategory("sports")
-        .setPrice(20)
-        .setQuantity(10)
-        .setCustomDimension(2, "barbaz")
-        .setCustomMetric(3, 32.22f)
-        .build());
+    com.google.android.gms.analytics.ecommerce.Product product =
+            new com.google.android.gms.analytics.ecommerce.Product()
+                .setId("foo")
+                .setName("baz")
+                .setCategory("sports")
+                .setPrice(20)
+                .setQuantity(10);
+
+    ProductAction productAction = new ProductAction(ProductAction.ACTION_REMOVE);
+
+    verify(tracker).send(new HitBuilders.ScreenViewBuilder()
+            .addProduct(product)
+            .setProductAction(productAction)
+            .setCustomMetric(3, 32)
+            .setCustomDimension(2, "barbaz")
+            .build());
   }
 
   @Test public void completedOrderEventsAreDetectedCorrectly() {
