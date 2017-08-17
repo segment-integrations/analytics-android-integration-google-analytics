@@ -356,6 +356,35 @@ public class GoogleAnalyticsTest {
                 .build());
   }
 
+  @Test public void sendProductEventWithUpdatedFormat() {
+    Properties properties = new Properties().putOrderId("foo")
+            .putProductId("foo")
+            .putCurrency("bar")
+            .putName("baz")
+            .putSku("qaz")
+            .putPrice(20)
+            .putValue("quantity", 10);
+
+    integration.sendProductEvent("Product Viewed", "sports", properties);
+
+    com.google.android.gms.analytics.ecommerce.Product product =
+            new com.google.android.gms.analytics.ecommerce.Product()
+                    .setId("foo")
+                    .setName("baz")
+                    .setCategory("sports")
+                    .setPrice(20)
+                    .setQuantity(10);
+
+    ProductAction productAction = new ProductAction(ProductAction.ACTION_DETAIL);
+
+    verify(tracker).send(new HitBuilders.EventBuilder()
+            .addProduct(product)
+            .setProductAction(productAction)
+            .setCategory("EnhancedEcommerce")
+            .setAction("Product Viewed")
+            .build());
+  }
+
   @Test public void sendProductEventWithCustomDimensionsAndMetrics() {
     integration.customDimensions = new ValueMap().putValue("customDimension", "dimension2");
     integration.customMetrics = new ValueMap().putValue("customMetric", "metric3");

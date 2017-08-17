@@ -69,6 +69,7 @@ public class GoogleAnalyticsIntegration
   };
   private static final ValueMap EMPTY = new ValueMap(Collections.<String, Object>emptyMap());
   private static final String DEFAULT_CATEGORY = "All";
+  private static final String ENHANCED_ECOMMERCE = "EnhancedEcommerce";
   static final Pattern COMPLETED_ORDER_PATTERN =
       Pattern.compile("completed *order", CASE_INSENSITIVE);
   static final Pattern PRODUCT_EVENT_NAME_PATTERN =
@@ -214,7 +215,7 @@ public class GoogleAnalyticsIntegration
           .setTransactionShipping(properties.shipping());
 
       eventHitBuilder.setProductAction(productAction)
-             .setCategory("EnhancedEcommerce");
+             .setCategory(ENHANCED_ECOMMERCE);
 
       // below method requires first method to be of type CustomHitBuilder
       attachCustomDimensionsAndMetrics(eventHitBuilder, properties);
@@ -349,7 +350,7 @@ public class GoogleAnalyticsIntegration
         .setPrice(properties.price())
         .setQuantity(properties.getInt(QUANTITY_KEY, 0));
 
-    // initialize variables with a default values
+    // initialize variables with default values
     String action = ProductAction.ACTION_DETAIL;
     String eventAction = "Product Viewed";
 
@@ -367,7 +368,7 @@ public class GoogleAnalyticsIntegration
 
     EventHitBuilder eventHitBuilder = new EventHitBuilder();
     eventHitBuilder.addProduct(product)
-           .setCategory("EnhancedEcommerce")
+           .setCategory(ENHANCED_ECOMMERCE)
            .setProductAction(productAction)
            .setAction(eventAction);
 
