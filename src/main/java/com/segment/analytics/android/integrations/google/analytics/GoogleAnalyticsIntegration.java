@@ -188,7 +188,6 @@ public class GoogleAnalyticsIntegration
 
     if (COMPLETED_ORDER_PATTERN.matcher(event).matches()) {
 
-      // initialize instance of EventHitBuilder
       EventHitBuilder eventHitBuilder = new EventHitBuilder();
 
       List<Product> products = properties.products();
@@ -196,7 +195,6 @@ public class GoogleAnalyticsIntegration
         for (int i = 0; i < products.size(); i++) {
           Product product = products.get(i);
 
-          // initialize instance of newProduct
           com.google.android.gms.analytics.ecommerce.Product newProduct =
                   new com.google.android.gms.analytics.ecommerce.Product()
               .setId(product.id())
@@ -204,7 +202,6 @@ public class GoogleAnalyticsIntegration
               .setPrice(product.price())
               .setQuantity(product.getInt(QUANTITY_KEY, 0));
 
-          // add product to builder object
           eventHitBuilder.addProduct(newProduct);
         }
       }
@@ -218,7 +215,6 @@ public class GoogleAnalyticsIntegration
       eventHitBuilder.setProductAction(productAction)
              .setCategory(ENHANCED_ECOMMERCE);
 
-      // below method requires first method to be of type CustomHitBuilder
       attachCustomDimensionsAndMetrics(eventHitBuilder, properties);
 
       Map<String, String> transaction = eventHitBuilder.build();
