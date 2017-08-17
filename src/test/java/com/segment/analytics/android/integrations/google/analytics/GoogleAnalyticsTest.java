@@ -352,6 +352,7 @@ public class GoogleAnalyticsTest {
                 .addProduct(product)
                 .setProductAction(productAction)
                 .setCategory("EnhancedEcommerce")
+                .setAction("Product Viewed")
                 .build());
   }
 
@@ -383,6 +384,7 @@ public class GoogleAnalyticsTest {
     verify(tracker).send(new HitBuilders.EventBuilder()
             .addProduct(product)
             .setProductAction(productAction)
+            .setAction("Product Removed")
             .setCategory("EnhancedEcommerce")
             .setCustomMetric(3, 32)
             .setCustomDimension(2, "barbaz")

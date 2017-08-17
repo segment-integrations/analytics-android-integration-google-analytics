@@ -349,23 +349,27 @@ public class GoogleAnalyticsIntegration
         .setPrice(properties.price())
         .setQuantity(properties.getInt(QUANTITY_KEY, 0));
 
-    // initialize variable with a default value
-    String eventAction = ProductAction.ACTION_DETAIL;
+    // initialize variables with a default values
+    String action = ProductAction.ACTION_DETAIL;
+    String eventAction = "Product Viewed";
 
     if (PRODUCT_ADDED.matcher(event).matches()) {
-      eventAction = ProductAction.ACTION_ADD;
+      action = ProductAction.ACTION_ADD;
+      eventAction = "Product Added";
     }
 
     if (PRODUCT_REMOVED.matcher(event).matches()) {
-      eventAction = ProductAction.ACTION_REMOVE;
+      action = ProductAction.ACTION_REMOVE;
+      eventAction = "Product Removed";
     }
 
-    ProductAction productAction = new ProductAction(eventAction);
+    ProductAction productAction = new ProductAction(action);
 
     EventHitBuilder eventHitBuilder = new EventHitBuilder();
     eventHitBuilder.addProduct(product)
            .setCategory("EnhancedEcommerce")
-           .setProductAction(productAction);
+           .setProductAction(productAction)
+           .setAction(eventAction);
 
     attachCustomDimensionsAndMetrics(eventHitBuilder, properties);
     Map<String, String> productEvent = eventHitBuilder.build();
