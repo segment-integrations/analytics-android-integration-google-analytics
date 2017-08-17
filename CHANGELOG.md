@@ -1,8 +1,16 @@
+Version 2.0.0 (17th August, 2017)
+===============================
+*(Supports analytics-android 4.0+ and Google Analytics 10.2.1+)*
+
+  * [Remove deprecated Ecommerce methods](https://github.com/segment-integrations/analytics-android-integration-google-analytics/commit/3f54a7de6966b08cead59b23e06c4dd22e765d60)
+  * Now supports [Enhanced Ecommerce](https://developers.google.com/analytics/devguides/collection/android/v4/enhanced-ecommerce)
+  * No longer supports `sku` property for products
+
 Version 1.1.4 (27th June, 2017)
 ===============================
 *(Supports analytics-android 4.0+ and Google Analytics 10.2.1+)*
- 
-  * [Attaches](https://github.com/segment-integrations/analytics-android-integration-google-analytics/commit/88b8b62a64b13737794fc9f56a11fdf946d5f884) campaign data to screen and track calls. 
+
+  * [Attaches](https://github.com/segment-integrations/analytics-android-integration-google-analytics/commit/88b8b62a64b13737794fc9f56a11fdf946d5f884) campaign data to screen and track calls.
 
 Version 1.1.3 (5th April, 2017)
 ===============================
