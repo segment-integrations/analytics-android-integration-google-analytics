@@ -334,6 +334,7 @@ public class GoogleAnalyticsTest {
         .putName("baz")
         .putSku("qaz")
         .putPrice(20)
+        .putCategory("purchase")
         .putValue("quantity", 10);
 
     integration.sendProductEvent("Viewed Product", "sports", properties);
@@ -351,7 +352,7 @@ public class GoogleAnalyticsTest {
     verify(tracker).send(new HitBuilders.EventBuilder()
                 .addProduct(product)
                 .setProductAction(productAction)
-                .setCategory("EnhancedEcommerce")
+                .setCategory("purchase")
                 .setAction("Product Viewed")
                 .build());
   }

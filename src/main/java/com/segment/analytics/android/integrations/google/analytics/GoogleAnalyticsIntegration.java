@@ -212,13 +212,12 @@ public class GoogleAnalyticsIntegration
           .setTransactionTax(properties.tax())
           .setTransactionShipping(properties.shipping());
 
-      eventHitBuilder.setProductAction(productAction)
-             .setCategory(ENHANCED_ECOMMERCE);
+      eventHitBuilder.setProductAction(productAction);
+
+      eventHitBuilder = addEcommerceEventCategory(eventHitBuilder, properties);
 
       attachCustomDimensionsAndMetrics(eventHitBuilder, properties);
-
       Map<String, String> transaction = eventHitBuilder.build();
-
       tracker.send(transaction);
       logger.verbose("tracker.send(%s);", transaction);
     }
@@ -365,9 +364,10 @@ public class GoogleAnalyticsIntegration
 
     EventHitBuilder eventHitBuilder = new EventHitBuilder();
     eventHitBuilder.addProduct(product)
-           .setCategory(ENHANCED_ECOMMERCE)
            .setProductAction(productAction)
            .setAction(eventAction);
+
+    eventHitBuilder = addEcommerceEventCategory(eventHitBuilder, properties);
 
     attachCustomDimensionsAndMetrics(eventHitBuilder, properties);
     Map<String, String> productEvent = eventHitBuilder.build();
@@ -377,5 +377,14 @@ public class GoogleAnalyticsIntegration
 
   @Override public com.google.android.gms.analytics.Tracker getUnderlyingInstance() {
     return tracker.delegate();
+  }
+
+  public EventHitBuilder addEcommerceEventCategory(EventHitBuilder eventHitBuilder, Properties properties) {
+    if (!isNullOrEmpty(properties.category())) {
+      eventHitBuilder.setCategory(properties.category());
+    } else {
+      eventHitBuilder.setCategory(ENHANCED_ECOMMERCE);
+    }
+    return eventHitBuilder;
   }
 }
