@@ -71,7 +71,8 @@ public class GoogleAnalyticsIntegration
   private static final String DEFAULT_CATEGORY = "All";
   private static final String ENHANCED_ECOMMERCE = "EnhancedEcommerce";
   static final Pattern COMPLETED_ORDER_PATTERN =
-      Pattern.compile("completed *order", CASE_INSENSITIVE);
+      Pattern.compile("completed *order|"
+              + "order *completed", CASE_INSENSITIVE);
   static final Pattern PRODUCT_EVENT_NAME_PATTERN =
       Pattern.compile("(((viewed)|(added)|(removed)) *product *.*)|"
               + "(product *.* ((viewed)|(added)|(removed)))", CASE_INSENSITIVE);
