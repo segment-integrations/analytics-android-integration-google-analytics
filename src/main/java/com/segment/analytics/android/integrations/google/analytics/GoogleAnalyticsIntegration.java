@@ -379,7 +379,8 @@ public class GoogleAnalyticsIntegration
     return tracker.delegate();
   }
 
-  public EventHitBuilder addEcommerceEventCategory(EventHitBuilder eventHitBuilder, Properties properties) {
+  public EventHitBuilder addEcommerceEventCategory(EventHitBuilder eventHitBuilder,
+                                                   Properties properties) {
     if (!isNullOrEmpty(properties.category())) {
       eventHitBuilder.setCategory(properties.category());
     } else {
