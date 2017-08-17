@@ -348,9 +348,10 @@ public class GoogleAnalyticsTest {
 
     ProductAction productAction = new ProductAction(ProductAction.ACTION_DETAIL);
 
-    verify(tracker).send(new HitBuilders.ScreenViewBuilder()
+    verify(tracker).send(new HitBuilders.EventBuilder()
                 .addProduct(product)
                 .setProductAction(productAction)
+                .setCategory("EnhancedEcommerce")
                 .build());
   }
 
@@ -379,9 +380,10 @@ public class GoogleAnalyticsTest {
 
     ProductAction productAction = new ProductAction(ProductAction.ACTION_REMOVE);
 
-    verify(tracker).send(new HitBuilders.ScreenViewBuilder()
+    verify(tracker).send(new HitBuilders.EventBuilder()
             .addProduct(product)
             .setProductAction(productAction)
+            .setCategory("EnhancedEcommerce")
             .setCustomMetric(3, 32)
             .setCustomDimension(2, "barbaz")
             .build());

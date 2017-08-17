@@ -186,8 +186,8 @@ public class GoogleAnalyticsIntegration
 
     if (COMPLETED_ORDER_PATTERN.matcher(event).matches()) {
 
-      // initialize instance of ScreenViewBuilder class
-      ScreenViewHitBuilder builder = new ScreenViewHitBuilder();
+      // initialize instance of EventHitBuilder
+      EventHitBuilder eventHitBuilder = new EventHitBuilder();
 
       List<Product> products = properties.products();
       if (!isNullOrEmpty(products)) {
@@ -203,7 +203,7 @@ public class GoogleAnalyticsIntegration
               .setQuantity(product.getInt(QUANTITY_KEY, 0));
 
           // add product to builder object
-          builder.addProduct(newProduct);
+          eventHitBuilder.addProduct(newProduct);
         }
       }
 
@@ -213,12 +213,13 @@ public class GoogleAnalyticsIntegration
           .setTransactionTax(properties.tax())
           .setTransactionShipping(properties.shipping());
 
-      builder.setProductAction(productAction);
+      eventHitBuilder.setProductAction(productAction)
+             .setCategory("EnhancedEcommerce");
 
       // below method requires first method to be of type CustomHitBuilder
-      attachCustomDimensionsAndMetrics(builder, properties);
+      attachCustomDimensionsAndMetrics(eventHitBuilder, properties);
 
-      Map<String, String> transaction = builder.build();
+      Map<String, String> transaction = eventHitBuilder.build();
 
       tracker.send(transaction);
       logger.verbose("tracker.send(%s);", transaction);
@@ -361,13 +362,13 @@ public class GoogleAnalyticsIntegration
 
     ProductAction productAction = new ProductAction(eventAction);
 
-    ScreenViewHitBuilder builder = new ScreenViewHitBuilder();
-    builder.addProduct(product)
+    EventHitBuilder eventHitBuilder = new EventHitBuilder();
+    eventHitBuilder.addProduct(product)
+           .setCategory("EnhancedEcommerce")
            .setProductAction(productAction);
 
-    attachCustomDimensionsAndMetrics(builder, properties);
-    Map<String, String> productEvent = builder.build();
-    tracker.setScreenName(event);
+    attachCustomDimensionsAndMetrics(eventHitBuilder, properties);
+    Map<String, String> productEvent = eventHitBuilder.build();
     tracker.send(productEvent);
     logger.verbose("tracker.send(%s);", productEvent);
   }
