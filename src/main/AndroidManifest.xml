@@ -1,1 +1,6 @@
-<manifest package="com.segment.analytics.android.integrations.google.analytics"/>
+<manifest package="com.segment.analytics.android.integrations.google.analytics"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>
