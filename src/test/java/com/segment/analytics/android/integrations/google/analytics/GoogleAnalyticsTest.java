@@ -8,6 +8,7 @@ import com.segment.analytics.Analytics;
 import com.segment.analytics.AnalyticsContext;
 import com.segment.analytics.AnalyticsContext.Campaign;
 import com.segment.analytics.Properties;
+import com.segment.analytics.Properties.Product;
 import com.segment.analytics.Traits;
 import com.segment.analytics.ValueMap;
 import com.segment.analytics.core.tests.BuildConfig;
@@ -35,11 +36,13 @@ import org.robolectric.annotation.Config;
 import static android.R.attr.category;
 import static com.segment.analytics.Analytics.LogLevel.VERBOSE;
 import static com.segment.analytics.Utils.createTraits;
+import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -201,6 +204,118 @@ public class GoogleAnalyticsTest {
         .setValue(0)
         .setCampaignParamsFromUrl(
             "utm_content=newsletter&utm_source=email&utm_medium=online&utm_campaign=coupons")
+        .build());
+  }
+
+  @Test public void trackECommerceEventWithCustomDimensionsAndProducts() {
+    integration.customDimensions = new ValueMap().putValue("originStationCode", "dimension1");
+
+    integration.track(new TrackPayloadBuilder()
+        .event("Product Viewed")
+        .properties(new Properties()
+            .putValue("orderId", "097129835182")
+            .putTotal(48.4)
+            .putShipping(0)
+            .putTax(0)
+            .putProducts(new Product("productId", "productSku", 20.5)
+                .putName("Bologna Centrale-Venezia Mestre")
+                .putValue("quantity", 1)
+                .putValue("originStationCode", "arn:stationCode")
+            )
+        )
+        .build());
+
+    verify(tracker).send(new HitBuilders.EventBuilder()
+        .addProduct(new com.google.android.gms.analytics.ecommerce.Product()
+            .setId("productId")
+            .setName("Bologna Centrale-Venezia Mestre")
+            .setCategory("All")
+            .setPrice(20.5)
+            .setQuantity(1)
+            .setCustomDimension(1, "arn:stationCode")
+        )
+        .setCategory("EnhancedEcommerce")
+        .setProductAction(new ProductAction(ProductAction.ACTION_DETAIL))
+        .setAction("Product Viewed")
+        .setCustomDimension(1, "arn:stationCode")
+        .build());
+
+    verify(tracker).send(new HitBuilders.EventBuilder()
+        .setAction("Product Viewed")
+        .setCategory("All")
+        .setLabel(null)
+        .setValue(0)
+        .build());
+  }
+
+  @Test public void trackECommerceEventWithCustomDimensionsWithoutProductsArray() {
+    integration.customDimensions = new ValueMap().putValue("originStationCode", "dimension1");
+
+    integration.track(new TrackPayloadBuilder()
+        .event("Product Viewed")
+        .properties(new Properties()
+            .putValue("orderId", "097129835182")
+            .putTotal(48.4)
+            .putShipping(0)
+            .putTax(0)
+            .putProductId("productId")
+            .putSku("productSku")
+            .putPrice(20.5)
+            .putName("Bologna Centrale-Venezia Mestre")
+            .putValue("quantity", 1)
+            .putValue("originStationCode", "arn:stationCode")
+        )
+        .build());
+
+    verify(tracker).send(new HitBuilders.EventBuilder()
+        .addProduct(new com.google.android.gms.analytics.ecommerce.Product()
+            .setId("productId")
+            .setName("Bologna Centrale-Venezia Mestre")
+            .setCategory("All")
+            .setPrice(20.5)
+            .setQuantity(1)
+            .setCustomDimension(1, "arn:stationCode")
+        )
+        .setCategory("EnhancedEcommerce")
+        .setProductAction(new ProductAction(ProductAction.ACTION_DETAIL))
+        .setAction("Product Viewed")
+        .setCustomDimension(1, "arn:stationCode")
+        .build());
+
+    verify(tracker).send(new HitBuilders.EventBuilder()
+        .setAction("Product Viewed")
+        .setCategory("All")
+        .setLabel(null)
+        .setValue(0)
+        .setCustomDimension(1, "arn:stationCode")
+        .build());
+  }
+
+  @Test public void trackNonECommerceEventWithCustomDimensionsWithoutProductsArray() {
+    integration.customDimensions = new ValueMap().putValue("originStationCode", "dimension1");
+
+    integration.track(new TrackPayloadBuilder()
+        .event("Custom Event")
+        .properties(new Properties()
+            .putValue("orderId", "097129835182")
+            .putTotal(48.4)
+            .putShipping(0)
+            .putTax(0)
+            .putProductId("productId")
+            .putSku("productSku")
+            .putPrice(20.5)
+            .putName("Bologna Centrale-Venezia Mestre")
+            .putValue("quantity", 1)
+            .putValue("originStationCode", "arn:stationCode")
+        )
+        .build());
+
+    verify(tracker).send(new HitBuilders.EventBuilder()
+        .setAction("Custom Event")
+        .setCategory("All")
+        .setLabel(null)
+        .setValue(0)
+        .setCustomDimension(1, "arn:stationCode")
         .build());
   }
 
@@ -407,18 +522,20 @@ public class GoogleAnalyticsTest {
                 .setName("baz")
                 .setCategory("sports")
                 .setPrice(20)
-                .setQuantity(10);
+                .setQuantity(10)
+                .setCustomMetric(3, 32)
+                .setCustomDimension(2, "barbaz");
 
     ProductAction productAction = new ProductAction(ProductAction.ACTION_REMOVE);
 
     verify(tracker).send(new HitBuilders.EventBuilder()
-            .addProduct(product)
-            .setProductAction(productAction)
-            .setAction("Product Removed")
-            .setCategory("EnhancedEcommerce")
-            .setCustomMetric(3, 32)
-            .setCustomDimension(2, "barbaz")
-            .build());
+        .addProduct(product)
+        .setProductAction(productAction)
+        .setAction("Product Removed")
+        .setCategory("EnhancedEcommerce")
+        .setCustomMetric(3, 32)
+        .setCustomDimension(2, "barbaz")
+        .build());
   }
 
   @Test public void completedOrderEventsAreDetectedCorrectly() {

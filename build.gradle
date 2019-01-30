@@ -43,7 +43,7 @@ dependencies {
     jcenter()
   }
 
-  compile 'com.segment.analytics.android:analytics:4.0.0'
+  compile 'com.segment.analytics.android:analytics:4.3.0'
 
   compile 'com.google.android.gms:play-services-analytics:11.4.2'
 
@@ -53,7 +53,7 @@ dependencies {
     exclude group: 'org.apache.httpcomponents', module: 'httpclient'
   }
 
-  testCompile 'com.segment.analytics.android:analytics-tests:4.0.0'
+  testCompile 'com.segment.analytics.android:analytics-tests:4.3.0'
 
   testCompile 'org.assertj:assertj-core:1.7.1'
 

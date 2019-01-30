@@ -196,11 +196,11 @@ public class GoogleAnalyticsIntegration
           Product product = products.get(i);
 
           com.google.android.gms.analytics.ecommerce.Product newProduct =
-                  new com.google.android.gms.analytics.ecommerce.Product()
-              .setId(product.id())
-              .setName(product.name())
-              .setPrice(product.price())
-              .setQuantity(product.getInt(QUANTITY_KEY, 0));
+            new com.google.android.gms.analytics.ecommerce.Product()
+                .setId(product.id())
+                .setName(product.name())
+                .setPrice(product.price())
+                .setQuantity(product.getInt(QUANTITY_KEY, 0));
 
           eventHitBuilder.addProduct(newProduct);
         }
@@ -301,6 +301,30 @@ public class GoogleAnalyticsIntegration
     }
   }
 
+  /**
+   * Set custom dimensions and metrics on the product.
+   *
+   * This implementation is the same as {@link #attachCustomDimensionsAndMetrics}.
+   *
+   * It is copied over as there is no common interface between {@link HitBuilders}
+   * and {@link com.google.android.gms.analytics.ecommerce.Product}.
+   */
+  void attachCustomDimensionsAndMetricsOnProduct(
+      com.google.android.gms.analytics.ecommerce.Product product, Properties properties) {
+    for (Map.Entry<String, Object> entry : properties.entrySet()) {
+      String property = entry.getKey();
+      if (customDimensions.containsKey(property)) {
+        int dimension =
+            extractNumber(customDimensions.getString(property), DIMENSION_PREFIX.length());
+        product.setCustomDimension(dimension, String.valueOf(entry.getValue()));
+      }
+      if (customMetrics.containsKey(property)) {
+        int metric = extractNumber(customMetrics.getString(property), METRIC_PREFIX.length());
+        product.setCustomMetric(metric, (int) Utils.coerceToFloat(entry.getValue(), 0));
+      }
+    }
+  }
+
   /** Set campaign data when present. */
   void attachCampaignData(CustomHitBuilder hitBuilder, BasePayload payload) {
     AnalyticsContext.Campaign campaign = payload.context().campaign();
@@ -333,46 +357,58 @@ public class GoogleAnalyticsIntegration
   }
 
   /** Send a product event. */
-  void sendProductEvent(String event, String category, Properties properties) {
+  void sendProductEvent(String event, String category, Properties eventProperties) {
     if (!PRODUCT_EVENT_NAME_PATTERN.matcher(event).matches()) {
       return;
     }
 
-    com.google.android.gms.analytics.ecommerce.Product product =
-            new com.google.android.gms.analytics.ecommerce.Product()
-        .setId(properties.productId())
-        .setName(properties.name())
-        .setCategory(isNullOrEmpty(category) ? DEFAULT_CATEGORY : category)
-        .setPrice(properties.price())
-        .setQuantity(properties.getInt(QUANTITY_KEY, 0));
-
-    // initialize variables with default values
-    String action = ProductAction.ACTION_DETAIL;
-    String eventAction = "Product Viewed";
-
-    if (PRODUCT_ADDED.matcher(event).matches()) {
-      action = ProductAction.ACTION_ADD;
-      eventAction = "Product Added";
+    List<Product> products = eventProperties.products();
+    if (isNullOrEmpty(products)) {
+      products = Collections.singletonList(new Product(eventProperties.productId(), eventProperties.sku(), eventProperties.price()));
     }
 
-    if (PRODUCT_REMOVED.matcher(event).matches()) {
-      action = ProductAction.ACTION_REMOVE;
-      eventAction = "Product Removed";
+    for (Product productProperties : products) {
+      Properties properties = new Properties();
+      properties.putAll(eventProperties);
+      properties.putAll(productProperties);
+
+      com.google.android.gms.analytics.ecommerce.Product product =
+        new com.google.android.gms.analytics.ecommerce.Product()
+            .setId(properties.productId() )
+            .setName(properties.name())
+            .setCategory(isNullOrEmpty(category) ? DEFAULT_CATEGORY : category)
+            .setPrice(properties.price())
+            .setQuantity(properties.getInt(QUANTITY_KEY, 0));
+
+      attachCustomDimensionsAndMetricsOnProduct(product, properties);
+
+      // initialize variables with default values
+      String action = ProductAction.ACTION_DETAIL;
+      String eventAction = "Product Viewed";
+
+      if (PRODUCT_ADDED.matcher(event).matches()) {
+        action = ProductAction.ACTION_ADD;
+        eventAction = "Product Added";
+      }
+
+      if (PRODUCT_REMOVED.matcher(event).matches()) {
+        action = ProductAction.ACTION_REMOVE;
+        eventAction = "Product Removed";
+      }
+
+      ProductAction productAction = new ProductAction(action);
+
+      EventHitBuilder eventHitBuilder = new EventHitBuilder();
+      eventHitBuilder.addProduct(product)
+          .setProductAction(productAction)
+          .setAction(eventAction);
+      eventHitBuilder = addEcommerceEventCategory(eventHitBuilder, properties);
+      attachCustomDimensionsAndMetrics(eventHitBuilder, properties);
+
+      Map<String, String> productEvent = eventHitBuilder.build();
+      tracker.send(productEvent);
+      logger.verbose("tracker.send(%s);", productEvent);
     }
-
-    ProductAction productAction = new ProductAction(action);
-
-    EventHitBuilder eventHitBuilder = new EventHitBuilder();
-    eventHitBuilder.addProduct(product)
-           .setProductAction(productAction)
-           .setAction(eventAction);
-
-    eventHitBuilder = addEcommerceEventCategory(eventHitBuilder, properties);
-
-    attachCustomDimensionsAndMetrics(eventHitBuilder, properties);
-    Map<String, String> productEvent = eventHitBuilder.build();
-    tracker.send(productEvent);
-    logger.verbose("tracker.send(%s);", productEvent);
   }
 
   @Override public com.google.android.gms.analytics.Tracker getUnderlyingInstance() {
