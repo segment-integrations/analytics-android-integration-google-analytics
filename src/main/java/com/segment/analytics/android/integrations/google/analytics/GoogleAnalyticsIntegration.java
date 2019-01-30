@@ -30,8 +30,8 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 /**
- * Google Analytics is the most popular analytics tool for the web because it’s free and sports a
- * wide range of features. It’s especially good at measuring traffic sources and ad campaigns.
+ * Google Analytics is the most popular analytics tool for the web because it's free and sports a
+ * wide range of features. It's especially good at measuring traffic sources and ad campaigns.
  *
  * @see <a href="http://www.google.com/analytics/">Google Analytics</a>
  * @see <a href="https://segment.com/docs/integrations/google-analytics/">Google Analytics
