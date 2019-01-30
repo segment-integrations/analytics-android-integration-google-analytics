@@ -15,8 +15,11 @@ jobs:
       - restore_cache:
           key: dependencies-{{ .Branch }}-{{ checksum "build.gradle" }}
       - run:
-          name: Accept licenses
+          name: Install licenses
           command: cp -r licenses $ANDROID_HOME/licenses
+      - run:
+          name: Accept licenses
+          command: sdkmanager --update && yes | sdkmanager --licenses
       - run:
           name: Install dependencies
           command: ./gradlew dependencies
