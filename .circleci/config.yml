@@ -16,7 +16,7 @@ jobs:
           key: dependencies-{{ .Branch }}-{{ checksum "build.gradle" }}
       - run:
           name: Install licenses
-          command: cp -r licenses $ANDROID_HOME/licenses
+          command: cp -r licenses $ANDROID_HOME
       - run:
           name: Accept licenses
           command: sdkmanager --update && yes | sdkmanager --licenses
