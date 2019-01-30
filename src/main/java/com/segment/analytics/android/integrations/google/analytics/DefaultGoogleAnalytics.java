@@ -5,7 +5,7 @@ import android.app.Activity;
 class DefaultGoogleAnalytics implements GoogleAnalytics {
   final com.google.android.gms.analytics.GoogleAnalytics delegate;
 
-  public DefaultGoogleAnalytics(com.google.android.gms.analytics.GoogleAnalytics delegate) {
+  DefaultGoogleAnalytics(com.google.android.gms.analytics.GoogleAnalytics delegate) {
     this.delegate = delegate;
   }
 
