@@ -28,14 +28,14 @@ def isSnapshotBuild() {
 
 def getRepositoryUsername() {
   if (!hasProperty('NEXUS_USERNAME')) {
-    throw new InvalidUserDataException("Nexus username is not set")
+    return ''
   }
   return NEXUS_USERNAME
 }
 
 def getRepositoryPassword() {
   if (!hasProperty('NEXUS_PASSWORD')) {
-    throw new InvalidUserDataException("Nexus password is not set")
+    return ''
   }
   return NEXUS_PASSWORD
 }
