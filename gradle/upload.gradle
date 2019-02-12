@@ -15,34 +15,6 @@
  */
 
 apply plugin: 'maven'
-apply plugin: 'signing'
-apply plugin: 'io.codearte.nexus-staging'
-
-/**
- * Use -Psnapshot to enable SNAPSHOT version
- * @return <code>true</code> if it's a snapshot build. <code>false</code> otherwise.
- */
-def isSnapshotBuild() {
-  return hasProperty('snapshot')
-}
-
-def getRepositoryUsername() {
-  if (!hasProperty('NEXUS_USERNAME')) {
-    throw new InvalidUserDataException("Nexus username is not set")
-  }
-  return NEXUS_USERNAME
-}
-
-def getRepositoryPassword() {
-  if (!hasProperty('NEXUS_PASSWORD')) {
-    throw new InvalidUserDataException("Nexus password is not set")
-  }
-  return NEXUS_PASSWORD
-}
-
-def getVersion() {
-  return isSnapshotBuild() ? VERSION_NAME + "-SNAPSHOT": VERSION_NAME
-}
 
 afterEvaluate { project ->
   uploadArchives {
@@ -50,15 +22,18 @@ afterEvaluate { project ->
       mavenDeployer {
         beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
+        def userName = System.getenv("NEXUS_USERNAME")
+        def password = System.getenv("NEXUS_PASSWORD")
+
         pom.groupId = GROUP
         pom.artifactId = POM_ARTIFACT_ID
-        pom.version = getVersion()
+        pom.version = isRelease ? VERSION.replace('-SNAPSHOT', '') : VERSION
 
         repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-          authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+          authentication(userName: userName, password: password)
         }
         snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-          authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+          authentication(userName: userName, password: password)
         }
 
         pom.project {
@@ -92,11 +67,6 @@ afterEvaluate { project ->
     }
   }
 
-  signing {
-    required { !isSnapshotBuild() && gradle.taskGraph.hasTask("uploadArchives") }
-    sign configurations.archives
-  }
-
   task androidJavadocs(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
@@ -125,8 +95,4 @@ afterEvaluate { project ->
     archives androidSourcesJar
     archives androidJavadocsJar
   }
-}
-
-nexusStaging {
-  stagingProfileId = "73905a9e454559"
 }

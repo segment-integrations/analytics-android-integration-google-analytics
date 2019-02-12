@@ -2,6 +2,7 @@ package com.segment.analytics.android.integrations.google.analytics;
 
 import android.app.Activity;
 import android.app.Application;
+
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.ecommerce.ProductAction;
 import com.segment.analytics.Analytics;
@@ -10,33 +11,31 @@ import com.segment.analytics.AnalyticsContext.Campaign;
 import com.segment.analytics.Properties;
 import com.segment.analytics.Traits;
 import com.segment.analytics.ValueMap;
-import com.segment.analytics.core.tests.BuildConfig;
 import com.segment.analytics.integrations.IdentifyPayload;
 import com.segment.analytics.integrations.Logger;
 import com.segment.analytics.integrations.ScreenPayload;
 import com.segment.analytics.integrations.TrackPayload;
-import com.segment.analytics.test.IdentifyPayloadBuilder;
-import com.segment.analytics.test.ScreenPayloadBuilder;
-import com.segment.analytics.test.TrackPayloadBuilder;
 import java.lang.reflect.Constructor;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
-import org.assertj.core.api.AbstractAssert;
-import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
-import static android.R.attr.category;
 import static com.segment.analytics.Analytics.LogLevel.VERBOSE;
 import static com.segment.analytics.Utils.createTraits;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -45,28 +44,28 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class, sdk = 18, manifest = Config.NONE)
-// todo: These tests do not run in the IDE http://pastebin.com/YZZTcZa8
 public class GoogleAnalyticsTest {
+
   GoogleAnalyticsIntegration integration;
-  GoogleAnalytics googleAnalytics;
-  Tracker tracker;
+  @Mock GoogleAnalytics googleAnalytics;
+  @Mock Tracker tracker;
   @Mock Analytics analytics;
   @Mock Application application;
 
-  @Before public void setUp() {
+  static final String TRACKING_ID = "foo";
+
+  @Before
+  public void setUp() {
     initMocks(this);
-    googleAnalytics = mock(GoogleAnalytics.class);
-    tracker = mock(Tracker.class);
 
     when(analytics.getApplication()).thenReturn(application);
-    when(googleAnalytics.newTracker("foo")).thenReturn(tracker);
+    when(googleAnalytics.newTracker(TRACKING_ID)).thenReturn(tracker);
 
     integration = new GoogleAnalyticsIntegration(application, googleAnalytics,
-        new ValueMap().putValue("mobileTrackingId", "foo"), Logger.with(VERBOSE));
+        new ValueMap().putValue("mobileTrackingId", TRACKING_ID), Logger.with(VERBOSE));
   }
 
-  static AnalyticsContext contextWithCampaign(Campaign campaign) throws Exception {
+  private static AnalyticsContext contextWithCampaign(Campaign campaign) throws Exception {
     Map<String, Object> map = new LinkedHashMap<>();
     map.put("traits", new Traits());
     Constructor<AnalyticsContext> constructor =
@@ -77,7 +76,27 @@ public class GoogleAnalyticsTest {
   }
 
   @Test public void initialize() throws IllegalStateException {
-    // TODO
+    ValueMap customDimensions = new ValueMap().putValue("tag", "dimension0");
+    ValueMap customMetrics = new ValueMap().putValue("lag", "metric0");
+
+    integration = new GoogleAnalyticsIntegration(application, googleAnalytics,
+            new ValueMap().putValue("mobileTrackingId", TRACKING_ID)
+                    .putValue("anonymizeIp", true)
+                    .putValue("reportUncaughtExceptions", true)
+                    .putValue("sendUserId", true)
+                    .putValue("dimensions", customDimensions)
+                    .putValue("metrics", customMetrics), Logger.with(VERBOSE));
+
+    verify(googleAnalytics, atLeastOnce()).newTracker(TRACKING_ID);
+    assertEquals(tracker, integration.tracker);
+
+    verify(tracker).setAnonymizeIp(true);
+    verify(tracker).setUncaughtExceptionReporter(application);
+
+    assertTrue(integration.sendUserId);
+    assertEquals(customDimensions, integration.customDimensions);
+    assertEquals(customMetrics, integration.customMetrics);
+
   }
 
   @Test public void activityStart() {
@@ -94,7 +113,7 @@ public class GoogleAnalyticsTest {
 
   @Test public void identify() {
     Traits traits = createTraits("foo").putAge(20);
-    IdentifyPayload payload = new IdentifyPayloadBuilder().traits(traits).build();
+    IdentifyPayload payload = (new IdentifyPayload.Builder()).userId("foo").traits(traits).build();
     integration.identify(payload);
 
     // If there are no custom dimensions/metrics and `sendUserId` is false,
@@ -106,7 +125,7 @@ public class GoogleAnalyticsTest {
     integration.sendUserId = true;
 
     Traits traits = createTraits("foo").putAge(20);
-    integration.identify(new IdentifyPayloadBuilder().traits(traits).build());
+    integration.identify((new IdentifyPayload.Builder()).userId("foo").traits(traits).build());
 
     // If there are no custom dimensions/metrics and `sendUserId` is true,
     // only the userId should be set.
@@ -119,7 +138,7 @@ public class GoogleAnalyticsTest {
     integration.customMetrics = new ValueMap().putValue("level", "metric12");
 
     Traits traits = createTraits("foo").putAge(20).putName("Chris").putValue("level", 13);
-    integration.identify(new IdentifyPayloadBuilder().traits(traits).build());
+    integration.identify((new IdentifyPayload.Builder()).userId("foo").traits(traits).build());
 
     // Verify user id is set.
     verify(tracker).set("&uid", "foo");
@@ -130,7 +149,7 @@ public class GoogleAnalyticsTest {
   }
 
   @Test public void track() {
-    integration.track(new TrackPayloadBuilder().event("foo").build());
+    integration.track((new TrackPayload.Builder()).anonymousId("1234").event("foo").build());
     verify(tracker).send(new HitBuilders.EventBuilder().setCategory("All")
         .setAction("foo")
         .setLabel(null)
@@ -142,7 +161,7 @@ public class GoogleAnalyticsTest {
     Properties properties =
         new Properties().putValue(51).putValue("label", "bar").putCategory("baz");
 
-    integration.track(new TrackPayloadBuilder().properties(properties).event("foo").build());
+    integration.track((new TrackPayload.Builder()).anonymousId("1234").properties(properties).event("foo").build());
 
     verify(tracker).send(new HitBuilders.EventBuilder().setCategory("baz")
         .setAction("foo")
@@ -154,7 +173,7 @@ public class GoogleAnalyticsTest {
   @Test public void trackWithCustomDimensions() {
     integration.customDimensions = new ValueMap().putValue("custom", "dimension3");
 
-    integration.track(new TrackPayloadBuilder().event("foo")
+    integration.track((new TrackPayload.Builder()).anonymousId("1234").event("foo")
         .properties(new Properties().putValue("custom", "test"))
         .build());
 
@@ -169,7 +188,7 @@ public class GoogleAnalyticsTest {
   @Test public void trackWithCustomMetrics() {
     integration.customMetrics = new ValueMap().putValue("score", "metric5");
 
-    integration.track(new TrackPayloadBuilder().event("foo")
+    integration.track((new TrackPayload.Builder()).anonymousId("1234").event("foo")
         .properties(new Properties().putValue("score", 50))
         .build());
 
@@ -189,7 +208,7 @@ public class GoogleAnalyticsTest {
         .putName("coupons")
         .putSource("email");
 
-    TrackPayload payload = new TrackPayloadBuilder()  //
+    TrackPayload payload = (new TrackPayload.Builder()).anonymousId("1234")  //
         .event("bar") //
         .context(contextWithCampaign(campaign)) //
         .build();
@@ -206,7 +225,7 @@ public class GoogleAnalyticsTest {
 
   @Test public void trackWithNullCampaignData() throws Exception{
 
-    TrackPayload payload = new TrackPayloadBuilder()  //
+    TrackPayload payload = (new TrackPayload.Builder()).anonymousId("1234")  //
         .event("bar") //
         .build();
 
@@ -224,7 +243,7 @@ public class GoogleAnalyticsTest {
         .putContent("email") //
         .putMedium("online");
 
-    TrackPayload payload = new TrackPayloadBuilder()  //
+    TrackPayload payload = (new TrackPayload.Builder()).anonymousId("1234")  //
         .event("bar") //
         .context(contextWithCampaign(campaign)) //
         .build();
@@ -240,7 +259,7 @@ public class GoogleAnalyticsTest {
   }
 
   @Test public void screen() {
-    integration.screen(new ScreenPayloadBuilder().name("foo").build());
+    integration.screen((new ScreenPayload.Builder()).anonymousId("1234").name("foo").build());
 
     InOrder inOrder = inOrder(tracker);
     inOrder.verify(tracker).setScreenName("foo");
@@ -250,7 +269,7 @@ public class GoogleAnalyticsTest {
   @Test public void screenWithCustomDimensions() {
     integration.customDimensions = new ValueMap().putValue("custom", "dimension10");
 
-    integration.screen(new ScreenPayloadBuilder().name("foo")
+    integration.screen((new ScreenPayload.Builder()).anonymousId("1234").name("foo")
         .properties(new Properties().putValue("custom", "value"))
         .build());
 
@@ -263,7 +282,7 @@ public class GoogleAnalyticsTest {
   @Test public void screenWithCustomMetrics() {
     integration.customMetrics = new ValueMap().putValue("count", "metric14");
 
-    integration.screen(new ScreenPayloadBuilder().name("foo")
+    integration.screen((new ScreenPayload.Builder()).anonymousId("1234").name("foo")
         .properties(new Properties().putValue("count", 100))
         .build());
 
@@ -278,7 +297,7 @@ public class GoogleAnalyticsTest {
         .putSource("google") //
         .putMedium("cpc")
         .putName("spring_sale");
-    ScreenPayload payload = new ScreenPayloadBuilder()  //
+    ScreenPayload payload = (new ScreenPayload.Builder()).anonymousId("1234")  //
         .name("foo") //
         .context(contextWithCampaign(campaign)) //
         .build();
@@ -296,7 +315,7 @@ public class GoogleAnalyticsTest {
     Campaign campaign = new Campaign() //
         .putContent("textlink") //
         .putMedium("cpc");
-    ScreenPayload payload = new ScreenPayloadBuilder()  //
+    ScreenPayload payload = (new ScreenPayload.Builder()).anonymousId("1234")  //
         .name("hey") //
         .context(contextWithCampaign(campaign)) //
         .build();
@@ -311,7 +330,7 @@ public class GoogleAnalyticsTest {
   }
 
   @Test public void screenWithNullCampaignData() throws Exception {
-    ScreenPayload payload = new ScreenPayloadBuilder()  //
+    ScreenPayload payload = (new ScreenPayload.Builder()).anonymousId("1234")  //
         .name("hey") //
         .build();
 
@@ -422,62 +441,64 @@ public class GoogleAnalyticsTest {
   }
 
   @Test public void completedOrderEventsAreDetectedCorrectly() {
-    assertThat(GoogleAnalyticsIntegration.COMPLETED_ORDER_PATTERN) //
-        .matches("Completed Order")
-        .matches("completed Order")
-        .matches("Completed order")
-        .matches("completed order")
-        .matches("completed           order")
-        .matches("Order Completed")
-        .matches("order Completed")
-        .matches("Order completed")
-        .matches("order completed")
-        .matches("order           completed")
-        .doesNotMatch("completed")
-        .doesNotMatch("order")
-        .doesNotMatch("completed orde")
-        .doesNotMatch("")
-        .doesNotMatch("ompleted order");
+    Pattern pattern = GoogleAnalyticsIntegration.COMPLETED_ORDER_PATTERN;
+
+    String[] shouldMatch = new String[]{
+            "Completed Order",
+            "completed Order",
+            "Completed order",
+            "completed order",
+            "completed           order",
+            "Order Completed",
+            "order Completed",
+            "Order completed",
+            "order completed",
+            "order           completed"
+    };
+
+    String [] shouldNotMatch = new String[] {
+            "completed",
+            "order",
+            "completed orde",
+            "",
+            "ompleted order"
+    };
+
+    assertPatternCases(pattern, shouldMatch, shouldNotMatch);
   }
 
   @Test public void productEventsAreAreDetectedCorrectly() {
-    assertThat(GoogleAnalyticsIntegration.PRODUCT_EVENT_NAME_PATTERN) //
-        .matches("Viewed Product Category")
-        .matches("VIEweD prODUct")
-        .matches("adDed Product")
-        .matches("Removed Product")
-        .matches("Viewed      Product")
-        .doesNotMatch("removed")
-        .doesNotMatch("Viewed")
-        .doesNotMatch("Viewed")
-        .doesNotMatch("adDed");
+
+    Pattern pattern = GoogleAnalyticsIntegration.PRODUCT_EVENT_NAME_PATTERN;
+
+    String[] shouldMatch = new String[]{
+            "Viewed Product Category",
+            "VIEweD prODUct",
+            "adDed Product",
+            "Removed Product",
+            "Viewed      Product"
+    };
+
+    String [] shouldNotMatch = new String[] {
+            "removed",
+            "Viewed",
+            "adDed"
+    };
+
+    assertPatternCases(pattern, shouldMatch, shouldNotMatch);
+
   }
 
-  PatternAssert assertThat(Pattern pattern) {
-    return new PatternAssert(pattern);
-  }
-
-  static class PatternAssert extends AbstractAssert<PatternAssert, Pattern> {
-    public PatternAssert(Pattern actual) {
-      super(actual, PatternAssert.class);
+  private static void assertPatternCases(Pattern pattern, String[] shouldMatch, String[] shouldNotMatch) {
+    for (String text : shouldMatch) {
+      String msg = String.format("Expected <%s> to match pattern <%s> but did not.", text, pattern.pattern());
+      assertTrue(msg, pattern.matcher(text).matches());
     }
 
-    public PatternAssert matches(String text) {
-      isNotNull();
-      Assertions.assertThat(actual.matcher(text).matches())
-          .overridingErrorMessage("Expected <%s> to match pattern <%s> but did not.", text,
-              actual.pattern())
-          .isTrue();
-      return this;
-    }
-
-    public PatternAssert doesNotMatch(String text) {
-      isNotNull();
-      Assertions.assertThat(actual.matcher(text).matches())
-          .overridingErrorMessage("Expected <%s> to not match patter <%s> but did.", text,
-              actual.pattern())
-          .isFalse();
-      return this;
+    for (String text : shouldNotMatch) {
+      String msg = String.format("Expected <%s> to not match patter <%s> but did.", text, pattern.pattern());
+      assertFalse(msg, pattern.matcher(text).matches());
     }
   }
+
 }

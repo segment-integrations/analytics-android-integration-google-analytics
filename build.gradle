@@ -12,6 +12,9 @@ buildscript {
   }
 }
 
+// Use -Prelease or $ORG_GRADLE_PROJECT_RELEASE="true" to mark the project as a release
+ext.isRelease = hasProperty('release')
+
 apply plugin: 'com.android.library'
 apply plugin: 'checkstyle'
 apply plugin: 'com.f2prateek.checkstyle'
@@ -23,12 +26,20 @@ android {
   defaultConfig {
     minSdkVersion 14
     targetSdkVersion 28
-    compileSdkVersion 23
   }
 
   compileOptions {
     sourceCompatibility JavaVersion.VERSION_1_7
     targetCompatibility JavaVersion.VERSION_1_7
+  }
+
+  lintOptions {
+    abortOnError false
+  }
+
+  testOptions {
+    unitTests.returnDefaultValues = true
+    unitTests.includeAndroidResources = true
   }
 }
 
@@ -43,21 +54,22 @@ dependencies {
     jcenter()
   }
 
-  compile 'com.segment.analytics.android:analytics:4.0.0'
+  api 'com.segment.analytics.android:analytics:4.3.1'
+  api 'com.google.android.gms:play-services-analytics:11.4.2'
 
-  compile 'com.google.android.gms:play-services-analytics:11.4.2'
+  testImplementation 'com.segment.analytics.android:analytics-tests:4.3.1'
+  testImplementation 'junit:junit:4.12'
+  testImplementation 'com.android.support.test:runner:1.0.2'
+  testImplementation 'org.mockito:mockito-core:2.22.0'
 
-  testCompile 'junit:junit:4.12'
-  testCompile('org.robolectric:robolectric:3.0') {
+  // Required for testing Uri.Builder and JSON
+  testImplementation('org.robolectric:robolectric:4.1') {
     exclude group: 'commons-logging', module: 'commons-logging'
     exclude group: 'org.apache.httpcomponents', module: 'httpclient'
   }
-
-  testCompile 'com.segment.analytics.android:analytics-tests:4.0.0'
-
-  testCompile 'org.assertj:assertj-core:1.7.1'
-
-  testCompile 'org.mockito:mockito-core:1.10.19'
 }
 
-apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
+apply from: rootProject.file('gradle/attach-jar.gradle')
+apply from: rootProject.file('gradle/upload.gradle')
+apply from: rootProject.file('gradle/sign.gradle')
+apply from: rootProject.file('gradle/promote.gradle')

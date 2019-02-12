@@ -1,6 +1,7 @@
 package com.segment.analytics.android.integrations.google.analytics;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 
@@ -55,7 +56,8 @@ public class GoogleAnalyticsIntegration
       }
 
       Context context = analytics.getApplication();
-      //noinspection MissingPermission
+      // We already check for permissions before initializing the GA instance
+      @SuppressLint("MissingPermission")
       com.google.android.gms.analytics.GoogleAnalytics ga =
           com.google.android.gms.analytics.GoogleAnalytics.getInstance(context);
 

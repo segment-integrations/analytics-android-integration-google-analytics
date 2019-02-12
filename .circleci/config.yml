@@ -1,9 +1,9 @@
 version: 2
 jobs:
   build:
-    resource_class: small
+    resource_class: large
     docker:
-      - image: circleci/android:api-25-alpha
+      - image: circleci/android:api-28
         environment:
           ANDROID_HOME: /home/circleci/android
           CIRCLE_JDK_VERSION: oraclejdk8
@@ -15,8 +15,8 @@ jobs:
       - restore_cache:
           key: dependencies-{{ .Branch }}-{{ checksum "build.gradle" }}
       - run:
-          name: Install licenses
-          command: cp -r licenses $ANDROID_HOME
+          name: Accept licenses
+          command: cp /opt/android/sdk/licenses/* $ANDROID_HOME/licenses
       - run:
           name: Install dependencies
           command: ./gradlew dependencies
@@ -29,8 +29,8 @@ jobs:
             - /home/circleci/.android
             - /home/circleci/android
             - /home/circleci/.gradle
-            - /usr/local/android-sdk-linux/platforms/android-25
-            - /usr/local/android-sdk-linux/build-tools/25.0.0
+            - /usr/local/android-sdk-linux/platforms/android-28
+            - /usr/local/android-sdk-linux/build-tools/28.0.3
             - /usr/local/android-sdk-linux/extras/android/m2repository
       - store_artifacts:
           path: analytics-core/build/test-report
@@ -48,7 +48,7 @@ jobs:
   publish_snapshot:
     resource_class: small
     docker:
-      - image: circleci/android:api-25-alpha
+      - image: circleci/android:api-28
         environment:
           ANDROID_HOME: /home/circleci/android
           CIRCLE_JDK_VERSION: oraclejdk8
@@ -73,7 +73,7 @@ jobs:
   publish:
       resource_class: small
       docker:
-        - image: circleci/android:api-25-alpha
+        - image: circleci/android:api-28
           environment:
             ANDROID_HOME: /home/circleci/android
             CIRCLE_JDK_VERSION: oraclejdk8
