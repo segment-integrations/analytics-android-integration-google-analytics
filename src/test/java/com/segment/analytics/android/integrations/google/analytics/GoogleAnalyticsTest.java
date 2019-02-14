@@ -9,6 +9,7 @@ import com.segment.analytics.Analytics;
 import com.segment.analytics.AnalyticsContext;
 import com.segment.analytics.AnalyticsContext.Campaign;
 import com.segment.analytics.Properties;
+import com.segment.analytics.Properties.Product;
 import com.segment.analytics.Traits;
 import com.segment.analytics.ValueMap;
 import com.segment.analytics.integrations.IdentifyPayload;
@@ -22,7 +23,6 @@ import java.util.regex.Pattern;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
@@ -32,7 +32,7 @@ import static com.segment.analytics.Utils.createTraits;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.argThat;
+
 import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
@@ -76,8 +76,8 @@ public class GoogleAnalyticsTest {
   }
 
   @Test public void initialize() throws IllegalStateException {
-    ValueMap customDimensions = new ValueMap().putValue("tag", "dimension0");
-    ValueMap customMetrics = new ValueMap().putValue("lag", "metric0");
+    ValueMap customDimensions = new ValueMap().putValue("tag", "dimension1");
+    ValueMap customMetrics = new ValueMap().putValue("lag", "metric1");
 
     integration = new GoogleAnalyticsIntegration(application, googleAnalytics,
             new ValueMap().putValue("mobileTrackingId", TRACKING_ID)
@@ -223,7 +223,146 @@ public class GoogleAnalyticsTest {
         .build());
   }
 
-  @Test public void trackWithNullCampaignData() throws Exception{
+  @Test public void trackECommerceEventWithCustomDimensionsAndProducts() {
+    integration.customDimensions = new ValueMap()
+            .putValue("originStationCode", "dimension1")
+            .putValue("tag", "dimension2");
+
+    integration.track((new TrackPayload.Builder()).anonymousId("1234")
+        .event("Product Viewed")
+        .properties(new Properties()
+            .putValue("orderId", "097129835182")
+            .putTotal(48.4)
+            .putShipping(0)
+            .putTax(0)
+            .putValue("tag", "foo")
+            .putProducts(new Product("productIdA", "productSkuA", 10.5)
+                .putName("Name 1")
+                .putValue("quantity", 1)
+                .putValue("originStationCode", "arn:stationCode:1"),
+                    new Product("productIdB", "productSkuB", 20.5)
+                .putName("Name 2")
+                .putValue("quantity", 1)
+                .putValue("originStationCode", "arn:stationCode:2")
+            )
+        )
+        .build());
+
+    verify(tracker).send(new HitBuilders.EventBuilder()
+        .addProduct(new com.google.android.gms.analytics.ecommerce.Product()
+            .setId("productIdA")
+            .setName("Name 1")
+            .setCategory("All")
+            .setPrice(10.5)
+            .setQuantity(1)
+            .setCustomDimension(1, "arn:stationCode:1")
+            .setCustomDimension(2, "foo")
+        )
+        .setCategory("EnhancedEcommerce")
+        .setProductAction(new ProductAction(ProductAction.ACTION_DETAIL))
+        .setAction("Product Viewed")
+        .setCustomDimension(1, "arn:stationCode:1")
+        .setCustomDimension(2, "foo")
+        .build());
+
+    verify(tracker).send(new HitBuilders.EventBuilder()
+            .addProduct(new com.google.android.gms.analytics.ecommerce.Product()
+                    .setId("productIdB")
+                    .setName("Name 2")
+                    .setCategory("All")
+                    .setPrice(20.5)
+                    .setQuantity(1)
+                    .setCustomDimension(1, "arn:stationCode:2")
+                    .setCustomDimension(2, "foo")
+            )
+            .setCategory("EnhancedEcommerce")
+            .setProductAction(new ProductAction(ProductAction.ACTION_DETAIL))
+            .setAction("Product Viewed")
+            .setCustomDimension(1, "arn:stationCode:2")
+            .setCustomDimension(2, "foo")
+            .build());
+
+    verify(tracker).send(new HitBuilders.EventBuilder()
+        .setAction("Product Viewed")
+        .setCategory("All")
+        .setLabel(null)
+        .setValue(0)
+        .setCustomDimension(2, "foo")
+        .build());
+  }
+
+  @Test public void trackECommerceEventWithCustomDimensionsWithoutProductsArray() {
+    integration.customDimensions = new ValueMap().putValue("originStationCode", "dimension1");
+
+    integration.track((new TrackPayload.Builder()).anonymousId("1234")
+        .event("Product Viewed")
+        .properties(new Properties()
+            .putValue("orderId", "097129835182")
+            .putTotal(48.4)
+            .putShipping(0)
+            .putTax(0)
+            .putProductId("productId")
+            .putSku("productSku")
+            .putPrice(20.5)
+            .putName("Bologna Centrale-Venezia Mestre")
+            .putValue("quantity", 1)
+            .putValue("originStationCode", "arn:stationCode")
+        )
+        .build());
+
+    verify(tracker).send(new HitBuilders.EventBuilder()
+        .addProduct(new com.google.android.gms.analytics.ecommerce.Product()
+            .setId("productId")
+            .setName("Bologna Centrale-Venezia Mestre")
+            .setCategory("All")
+            .setPrice(20.5)
+            .setQuantity(1)
+            .setCustomDimension(1, "arn:stationCode")
+        )
+        .setCategory("EnhancedEcommerce")
+        .setProductAction(new ProductAction(ProductAction.ACTION_DETAIL))
+        .setAction("Product Viewed")
+        .setCustomDimension(1, "arn:stationCode")
+        .build());
+
+    verify(tracker).send(new HitBuilders.EventBuilder()
+        .setAction("Product Viewed")
+        .setCategory("All")
+        .setLabel(null)
+        .setValue(0)
+        .setCustomDimension(1, "arn:stationCode")
+        .build());
+  }
+
+  @Test public void trackNonECommerceEventWithCustomDimensionsWithoutProductsArray() {
+    integration.customDimensions = new ValueMap().putValue("originStationCode", "dimension1");
+
+    integration.track((new TrackPayload.Builder()).anonymousId("1234")
+        .event("Custom Event")
+        .properties(new Properties()
+            .putValue("orderId", "097129835182")
+            .putTotal(48.4)
+            .putShipping(0)
+            .putTax(0)
+            .putProductId("productId")
+            .putSku("productSku")
+            .putPrice(20.5)
+            .putName("Bologna Centrale-Venezia Mestre")
+            .putValue("quantity", 1)
+            .putValue("originStationCode", "arn:stationCode")
+        )
+        .build());
+
+    verify(tracker).send(new HitBuilders.EventBuilder()
+        .setAction("Custom Event")
+        .setCategory("All")
+        .setLabel(null)
+        .setValue(0)
+        .setCustomDimension(1, "arn:stationCode")
+        .build());
+  }
+
+  @Test public void trackWithNullCampaignData(){
 
     TrackPayload payload = (new TrackPayload.Builder()).anonymousId("1234")  //
         .event("bar") //
@@ -329,7 +468,7 @@ public class GoogleAnalyticsTest {
         .build());
   }
 
-  @Test public void screenWithNullCampaignData() throws Exception {
+  @Test public void screenWithNullCampaignData() {
     ScreenPayload payload = (new ScreenPayload.Builder()).anonymousId("1234")  //
         .name("hey") //
         .build();
@@ -426,18 +565,20 @@ public class GoogleAnalyticsTest {
                 .setName("baz")
                 .setCategory("sports")
                 .setPrice(20)
-                .setQuantity(10);
+                .setQuantity(10)
+                .setCustomMetric(3, 32)
+                .setCustomDimension(2, "barbaz");
 
     ProductAction productAction = new ProductAction(ProductAction.ACTION_REMOVE);
 
     verify(tracker).send(new HitBuilders.EventBuilder()
-            .addProduct(product)
-            .setProductAction(productAction)
-            .setAction("Product Removed")
-            .setCategory("EnhancedEcommerce")
-            .setCustomMetric(3, 32)
-            .setCustomDimension(2, "barbaz")
-            .build());
+        .addProduct(product)
+        .setProductAction(productAction)
+        .setAction("Product Removed")
+        .setCategory("EnhancedEcommerce")
+        .setCustomMetric(3, 32)
+        .setCustomDimension(2, "barbaz")
+        .build());
   }
 
   @Test public void completedOrderEventsAreDetectedCorrectly() {

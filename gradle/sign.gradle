@@ -9,7 +9,7 @@ gradle.taskGraph.whenReady { taskGraph ->
         def file = System.getenv("SIGNATURE_SECRET_FILE")
         def password = System.getenv("SIGNATURE_PASSWORD")
 
-        if (id.isEmpty() || file.isEmpty() || password.isEmpty()) {
+        if (id == null || id.isEmpty() || file == null || file.isEmpty() || password == null || password.isEmpty()) {
             throw new InvalidUserDataException("Signature is not properly configure. See README.md")
         }
 
