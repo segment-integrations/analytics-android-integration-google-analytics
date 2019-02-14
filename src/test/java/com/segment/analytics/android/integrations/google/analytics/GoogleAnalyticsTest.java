@@ -76,8 +76,8 @@ public class GoogleAnalyticsTest {
   }
 
   @Test public void initialize() throws IllegalStateException {
-    ValueMap customDimensions = new ValueMap().putValue("tag", "dimension0");
-    ValueMap customMetrics = new ValueMap().putValue("lag", "metric0");
+    ValueMap customDimensions = new ValueMap().putValue("tag", "dimension1");
+    ValueMap customMetrics = new ValueMap().putValue("lag", "metric1");
 
     integration = new GoogleAnalyticsIntegration(application, googleAnalytics,
             new ValueMap().putValue("mobileTrackingId", TRACKING_ID)
@@ -224,7 +224,9 @@ public class GoogleAnalyticsTest {
   }
 
   @Test public void trackECommerceEventWithCustomDimensionsAndProducts() {
-    integration.customDimensions = new ValueMap().putValue("originStationCode", "dimension1");
+    integration.customDimensions = new ValueMap()
+            .putValue("originStationCode", "dimension1")
+            .putValue("tag", "dimension2");
 
     integration.track((new TrackPayload.Builder()).anonymousId("1234")
         .event("Product Viewed")
@@ -233,34 +235,59 @@ public class GoogleAnalyticsTest {
             .putTotal(48.4)
             .putShipping(0)
             .putTax(0)
-            .putProducts(new Product("productId", "productSku", 20.5)
-                .putName("Bologna Centrale-Venezia Mestre")
+            .putValue("tag", "foo")
+            .putProducts(new Product("productIdA", "productSkuA", 10.5)
+                .putName("Name 1")
                 .putValue("quantity", 1)
-                .putValue("originStationCode", "arn:stationCode")
+                .putValue("originStationCode", "arn:stationCode:1"),
+                    new Product("productIdB", "productSkuB", 20.5)
+                .putName("Name 2")
+                .putValue("quantity", 1)
+                .putValue("originStationCode", "arn:stationCode:2")
             )
         )
         .build());
 
     verify(tracker).send(new HitBuilders.EventBuilder()
         .addProduct(new com.google.android.gms.analytics.ecommerce.Product()
-            .setId("productId")
-            .setName("Bologna Centrale-Venezia Mestre")
+            .setId("productIdA")
+            .setName("Name 1")
             .setCategory("All")
-            .setPrice(20.5)
+            .setPrice(10.5)
             .setQuantity(1)
-            .setCustomDimension(1, "arn:stationCode")
+            .setCustomDimension(1, "arn:stationCode:1")
+            .setCustomDimension(2, "foo")
         )
         .setCategory("EnhancedEcommerce")
         .setProductAction(new ProductAction(ProductAction.ACTION_DETAIL))
         .setAction("Product Viewed")
-        .setCustomDimension(1, "arn:stationCode")
+        .setCustomDimension(1, "arn:stationCode:1")
+        .setCustomDimension(2, "foo")
         .build());
+
+    verify(tracker).send(new HitBuilders.EventBuilder()
+            .addProduct(new com.google.android.gms.analytics.ecommerce.Product()
+                    .setId("productIdB")
+                    .setName("Name 2")
+                    .setCategory("All")
+                    .setPrice(20.5)
+                    .setQuantity(1)
+                    .setCustomDimension(1, "arn:stationCode:2")
+                    .setCustomDimension(2, "foo")
+            )
+            .setCategory("EnhancedEcommerce")
+            .setProductAction(new ProductAction(ProductAction.ACTION_DETAIL))
+            .setAction("Product Viewed")
+            .setCustomDimension(1, "arn:stationCode:2")
+            .setCustomDimension(2, "foo")
+            .build());
 
     verify(tracker).send(new HitBuilders.EventBuilder()
         .setAction("Product Viewed")
         .setCategory("All")
         .setLabel(null)
         .setValue(0)
+        .setCustomDimension(2, "foo")
         .build());
   }
 
