@@ -4,7 +4,7 @@ analytics-android-integration-google-analytics
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.segment.analytics.android.integrations/google-analytics/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.segment.analytics.android.integrations/google-analytics)
 [![Javadocs](http://javadoc-badge.appspot.com/com.segment.analytics.android.integrations/google-analytics.svg?label=javadoc)](http://javadoc-badge.appspot.com/com.segment.analytics.android.integrations/google-analytics)
 
-**WARNING**: This SDK has been deprecated. [Google is sunsetting their Google Analytics mobile SDKs on October 31st.](https://support.google.com/firebase/answer/9167112?hl=en). Please [see our migration tutorial](https://segment.com/docs/destinations/google-analytics/#migrating-deprecated-google-analytics-mobile-sdks-to-firebase) to learn more about migrating to our Firebase SDKs for Android. 
+**WARNING**: This SDK has been deprecated. On September 17th, 2019 this repository will be archived as read-only and no longer actively maintained. [Google is sunsetting their Google Analytics mobile SDKs on October 31st.](https://support.google.com/firebase/answer/9167112?hl=en). Please [see our migration tutorial](https://segment.com/docs/destinations/google-analytics/#migrating-deprecated-google-analytics-mobile-sdks-to-firebase) to learn more about migrating to our Firebase SDKs for Android. 
 
 Google Analytics integration for [analytics-android](https://github.com/segmentio/analytics-android).
 
