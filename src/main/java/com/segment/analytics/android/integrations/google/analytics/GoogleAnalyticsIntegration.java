@@ -338,9 +338,7 @@ public class GoogleAnalyticsIntegration
       return;
     }
 
-    BasePayload payload1 = payload;
-
-//    String utm_id = payload.properties().getString("utm_id")
+    
     String url = new Uri.Builder().appendQueryParameter("utm_content", campaign.content())
         .appendQueryParameter("utm_source", campaign.source())
         .appendQueryParameter("utm_medium", campaign.medium())
