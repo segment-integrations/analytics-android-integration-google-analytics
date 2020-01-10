@@ -1,5 +1,11 @@
 
-2.0.3 / 2019-02-20
+Version 2.1.0 / 2020-01-10
+==================
+
+  * [DEST-412] Add utm_id and gclid campaign param tracking on Deep Link Opened event (#22)
+  * Prepare next development version.
+
+Version 2.0.3 / 2019-02-20
 ==================
 
   * [FCD-412] Add product dimensions to Google Analytics Android (#20)
