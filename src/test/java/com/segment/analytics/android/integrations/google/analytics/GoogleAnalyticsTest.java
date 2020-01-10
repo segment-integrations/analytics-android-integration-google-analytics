@@ -16,10 +16,7 @@ import com.segment.analytics.integrations.IdentifyPayload;
 import com.segment.analytics.integrations.Logger;
 import com.segment.analytics.integrations.ScreenPayload;
 import com.segment.analytics.integrations.TrackPayload;
-import java.lang.reflect.Constructor;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.regex.Pattern;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,12 +24,16 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 
+import java.lang.reflect.Constructor;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
+
 import static com.segment.analytics.Analytics.LogLevel.VERBOSE;
 import static com.segment.analytics.Utils.createTraits;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
 import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
@@ -221,6 +222,16 @@ public class GoogleAnalyticsTest {
         .setCampaignParamsFromUrl(
             "utm_content=newsletter&utm_source=email&utm_medium=online&utm_campaign=coupons")
         .build());
+  }
+
+  @Test public void trackDeepLinkURL() {
+    integration.track((new TrackPayload.Builder()).anonymousId("1234").event("Deep Link Opened").properties(new Properties().putValue("url", "app://track.com/open?utm_id=12345&gclid=abcd&nope=")).build());
+    verify(tracker).send(new HitBuilders.EventBuilder().setCategory("All")
+            .setAction("Deep Link Opened")
+            .setCampaignParamsFromUrl("utm_id=12345&gclid=abcd")
+            .setLabel(null)
+            .setValue(0)
+            .build());
   }
 
   @Test public void trackECommerceEventWithCustomDimensionsAndProducts() {
